@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "spark-rust-udfs"
+version = "0.1.0"
+description = ""
+authors = ["Tomi Kasurinen <tomi.kasurinen@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+maturin = "^1.1.0"
+pytest = "^7.4.0"
+black = "^23.3.0"
+
+[tool.maturin]
+python-source = "python"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+include = 'python\/.*\.py?$'
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
