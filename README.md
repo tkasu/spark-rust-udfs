@@ -30,8 +30,10 @@ poetry run python -m python.spark_udfs.benchmark
 Example output with Apple Macbook Air M1, 8GB:
 
 ```
-native_sqrt_and_mol exec time: 0.2467, result: 21501849486.44
-rust_sqrt_and_mol_udf exec time: 3.3765, result: 21501849486.56
-rust_sqrt_and_mol_arrow_udf exec time: 1.4741, result: 21501849486.56
-pandas_sqrt_and_mol exec time: 0.6238, result: 21501849486.56
+native_sqrt_and_mol exec time: 0.3090, result: 21501849486.44
+python_sqrt_and_mol exec time: 3.0891, result: 21501849486.56
+python_sqrt_and_mol_arrow exec time: 1.5692, result: 21501849486.56
+rust_sqrt_and_mol_udf exec time: 2.5222, result: 21501849486.56
+rust_sqrt_and_mol_arrow_udf exec time: 0.9543, result: 21501849486.56
+pandas_sqrt_and_mol exec time: 0.4755, result: 21501849486.56
 ```

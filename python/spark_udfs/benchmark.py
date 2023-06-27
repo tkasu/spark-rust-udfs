@@ -1,3 +1,4 @@
+import math
 from timeit import default_timer as timer
 
 import pandas as pd
@@ -17,11 +18,15 @@ def benchmark():
     df = spark.range(10_000_000).select(F.col("id").alias("value")).repartition(8)
     df.persist()
     # trigger persist
-    df_count = df.count()
+    _ = df.count()
 
+    python_udf_sqrt_and_mol = F.udf(python_sqrt_and_mol, "float")
+    python_udf_sqrt_and_mol_arrow = F.pandas_udf(python_sqrt_and_mol_arrow, "float")
     pandas_udf_sqrt_and_mol = pandas_udf(pandas_sqrt_and_mol, "float")
 
     _time_and_log_spark_fn_exec_and_sum(df, native_sqrt_and_mol)
+    _time_and_log_spark_fn_exec_and_sum(df, python_udf_sqrt_and_mol)
+    _time_and_log_spark_fn_exec_and_sum(df, python_udf_sqrt_and_mol_arrow)
     _time_and_log_spark_fn_exec_and_sum(df, rust_sqrt_and_mol_udf)
     _time_and_log_spark_fn_exec_and_sum(df, rust_sqrt_and_mol_arrow_udf)
     _time_and_log_spark_fn_exec_and_sum(df, pandas_udf_sqrt_and_mol)
@@ -35,6 +40,14 @@ def native_sqrt_and_mol(value_col: Column) -> Column:
 
 def pandas_sqrt_and_mol(value_col: pd.Series) -> pd.Series:
     return value_col.pow(1 / 2) + 42
+
+
+def python_sqrt_and_mol(value: int) -> float:
+    return math.sqrt(value) + 42
+
+
+def python_sqrt_and_mol_arrow(s: pd.Series) -> pd.Series:
+    return s.apply(python_sqrt_and_mol)
 
 
 def _time_and_log_spark_fn_exec_and_sum(df, fn):
