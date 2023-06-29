@@ -6,12 +6,14 @@ import numpy as np
 import pandas as pd
 import pyspark.sql.functions as F
 from pyspark.sql import Column, SparkSession
+from pyspark.sql.types import DoubleType
 
 
 def benchmark():
     spark = _get_spark_session()
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
     spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
+
     from python.spark_udfs.rust import (
         rust_sqrt_and_mol_udf,
         rust_sqrt_and_mol_arrow_udf,
@@ -22,7 +24,7 @@ def benchmark():
     print("Benchmarking sqrt_and_mol -> sqrt(x) + 42")
     print("-" * 80)
     df_simple = (
-        spark.range(10_000_000).select(F.col("id").alias("value")).repartition(8)
+        spark.range(50_000_000).select(F.col("id").alias("value")).repartition(8)
     )
     df_simple.persist()
     # trigger persist
@@ -31,13 +33,15 @@ def benchmark():
     python_udf_sqrt_and_mol = F.udf(python_sqrt_and_mol, "float")
     python_udf_sqrt_and_mol_arrow = F.pandas_udf(python_sqrt_and_mol_arrow, "float")
     pandas_udf_sqrt_and_mol = F.pandas_udf(pandas_sqrt_and_mol, "float")
+    scala_udf_sqrt_and_mol = get_scala_sqrt_and_mol_fn(spark)
 
-    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, native_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_udf_sqrt_and_mol_arrow)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, rust_sqrt_and_mol_udf)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, rust_sqrt_and_mol_arrow_udf)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, pandas_udf_sqrt_and_mol)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, scala_udf_sqrt_and_mol)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, native_sqrt_and_mol)
 
     df_simple.unpersist()
 
@@ -105,6 +109,17 @@ def python_sqrt_and_mol_arrow(s: pd.Series) -> pd.Series:
     return s.apply(python_sqrt_and_mol)
 
 
+def get_scala_sqrt_and_mol_fn(spark: SparkSession) -> float:
+    spark.udf.registerJavaFunction(
+        "scala_sqrt_and_mol", "com.github.tkasu.udfs.SqrtAndMolUDF", DoubleType()
+    )
+
+    def scala_sqrt_and_mol_fn(col_name: str) -> Column:
+        return F.expr(f"scala_sqrt_and_mol({col_name})")
+
+    return scala_sqrt_and_mol_fn
+
+
 def python_average_crt(clicks: List[int], views: List[int]) -> float:
     return sum(click / view for click, view in zip(clicks, views)) / len(clicks)
 
@@ -133,7 +148,14 @@ def _time_and_log_average_crt_fn_exec_and_sum(df, fn):
 
 
 def _get_spark_session():
-    return SparkSession.builder.appName("pytest-pyspark-local-testing").getOrCreate()
+    return (
+        SparkSession.builder.config(
+            "spark.jars",
+            "scala/scala-udfs/target/scala-2.13/scala-udfs_2.13-0.1.0-SNAPSHOT.jar",
+        )
+        .appName("pytest-pyspark-local-testing")
+        .getOrCreate()
+    )
 
 
 if __name__ == "__main__":
