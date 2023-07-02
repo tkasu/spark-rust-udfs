@@ -1,4 +1,10 @@
-# Rust UDF Spark Example
+# Spark UDFs examples
+
+This project started as a trial of creating Maturin-based Rust UDFs for Apache Spark.
+However, it turned out to be my Spark UDF testing playground.
+
+Note that the benchmarks are run within single machine, and the order of the execution impact the results
+slightly. So the results are not completely deterministic, but they give some idea of the performance of the UDFs.
 
 ## Development
 
@@ -37,8 +43,6 @@ poetry run pytest
 ```
 
 ## Run (unscientific) UDF benchmarks
-
-NOTE! The order of the execution seems to matter a bit, so the results are not totally reliable.
 
 ```shell
 poetry run maturin develop --release
