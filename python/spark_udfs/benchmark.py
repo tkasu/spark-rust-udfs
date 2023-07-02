@@ -4,6 +4,8 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import pyspark.sql.functions as F
 from pyspark.sql import Column, SparkSession
 from pyspark.sql.types import DoubleType
@@ -33,13 +35,21 @@ def benchmark():
     python_udf_sqrt_and_mol = F.udf(python_sqrt_and_mol, "float")
     python_udf_sqrt_and_mol_arrow = F.pandas_udf(python_sqrt_and_mol_arrow, "float")
     pandas_udf_sqrt_and_mol = F.pandas_udf(pandas_sqrt_and_mol, "float")
+    polars_udf_sqrt_and_mol = F.pandas_udf(polars_sqrt_and_mol, "float")
+    polars_udf_sqrt_and_mol_arrow_optimized = F.pandas_udf(
+        polars_sqrt_and_mol_arrow_optimized, "double"
+    )  # arrow backed arrays gives double
     scala_udf_sqrt_and_mol = get_scala_sqrt_and_mol_fn(spark)
 
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_udf_sqrt_and_mol_arrow)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, pandas_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, rust_sqrt_and_mol_udf)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, rust_sqrt_and_mol_arrow_udf)
-    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, pandas_udf_sqrt_and_mol)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, polars_udf_sqrt_and_mol)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(
+        df_simple, polars_udf_sqrt_and_mol_arrow_optimized
+    )
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, scala_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, native_sqrt_and_mol)
 
@@ -99,6 +109,18 @@ def native_sqrt_and_mol(value_col: Column) -> Column:
 
 def pandas_sqrt_and_mol(value_col: pd.Series) -> pd.Series:
     return value_col.pow(1 / 2) + 42
+
+
+def polars_sqrt_and_mol(value_col: pd.Series) -> pd.Series:
+    pl_arr = pl.from_pandas(value_col)
+    res_arr = pl_arr.sqrt() + 42.0
+    return res_arr.to_pandas()
+
+
+def polars_sqrt_and_mol_arrow_optimized(value_col: pd.Series) -> pd.Series:
+    pl_arr = pl.from_arrow(pa.Array.from_pandas(value_col), rechunk=False)
+    res_arr = pl_arr.sqrt() + 42.0
+    return res_arr.to_pandas(use_pyarrow_extension_array=True, zero_copy_only=True)
 
 
 def python_sqrt_and_mol(value: int) -> float:
