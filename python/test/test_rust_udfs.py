@@ -10,7 +10,7 @@ def spark():
 
 
 def test_rust_sqrt_and_mol_udf(spark: SparkSession):
-    from python.spark_udfs.rust import rust_sqrt_and_mol_udf
+    from python.spark_udfs.sqrt_and_mol.rust import rust_sqrt_and_mol_udf
 
     pdf = pd.DataFrame({"value": [1, 4], "expected_res": [43.0, 44.0]})
     df = spark.createDataFrame(pdf)
@@ -19,7 +19,7 @@ def test_rust_sqrt_and_mol_udf(spark: SparkSession):
 
 
 def test_rust_sqrt_and_mol_arrow_udf(spark: SparkSession):
-    from python.spark_udfs.rust import rust_sqrt_and_mol_arrow_udf
+    from python.spark_udfs.sqrt_and_mol.rust import rust_sqrt_and_mol_arrow_udf
 
     pdf = pd.DataFrame({"value": [1, 4], "expected_res": [43.0, 44.0]})
     df = spark.createDataFrame(pdf)
