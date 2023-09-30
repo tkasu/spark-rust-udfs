@@ -55,20 +55,20 @@ Example output with Apple Macbook Air M1, 8GB:
 --------------------------------------------------------------------------------
 Benchmarking sqrt_and_mol -> sqrt(x) + 42
 --------------------------------------------------------------------------------
-native_sqrt_and_mol exec time: 0.3580, result: 237802256859.78
-python_udf_sqrt_and_mol exec time: 14.9199, result: 237802256859.68
-python_arrow_udf_sqrt_and_mol exec time: 4.7027, result: 237802256859.68
-pandas_udf_sqrt_and_mol exec time: 2.6175, result: 237802256859.68
-rust_sqrt_and_mol_udf exec time: 15.2828, result: 237802256859.68
-rust_sqrt_and_mol_arrow_udf exec time: 3.6733, result: 237802256859.68
-polars_udf_sqrt_and_mol exec time: 2.4192, result: 237802256859.68
-polars_udf_sqrt_and_mol_arrow_optimized exec time: 2.5194, result: 237802256859.78
-scala_udf_sqrt_and_mol exec time: 0.5632, result: 237802256859.78
+native_sqrt_and_mol exec time: 0.3383, result: 237802256859.78
+python_udf_sqrt_and_mol exec time: 12.7751, result: 237802256859.68
+python_arrow_udf_sqrt_and_mol exec time: 4.1689, result: 237802256859.68
+pandas_udf_sqrt_and_mol exec time: 2.1664, result: 237802256859.68
+rust_sqrt_and_mol_udf exec time: 13.3613, result: 237802256859.68
+rust_sqrt_and_mol_arrow_udf exec time: 3.3647, result: 237802256859.68
+polars_udf_sqrt_and_mol exec time: 2.1380, result: 237802256859.68
+polars_udf_sqrt_and_mol_arrow_optimized exec time: 2.3455, result: 237802256859.78
+scala_udf_sqrt_and_mol exec time: 0.4981, result: 237802256859.78
 --------------------------------------------------------------------------------
 Benchmarking average_crt -> avg(clicks_arr / views_arr)
 --------------------------------------------------------------------------------
-Warmup: sum of clicks: 674917177, sum of views: 674917177
-native_average_crt exec time: 2.1566, result: 0.1217
-python_udf_average_crt exec time: 2.8776, result: 0.1217
-rust_udf_average_crt_udf exec time: 1.9908, result: 0.1217
+Warmup: sum of clicks: 674870720, sum of views: 674870720
+native_average_crt exec time: 1.6115, result: 0.1216
+python_udf_average_crt exec time: 2.4822, result: 0.1216
+rust_udf_average_crt_udf exec time: 1.6440, result: 0.1216
 ```
