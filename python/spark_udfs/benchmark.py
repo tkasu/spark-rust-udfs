@@ -18,6 +18,7 @@ def benchmark():
 def sqrt_and_mol_benchmark(spark: SparkSession):
     from python.spark_udfs.sqrt_and_mol.pyfns import (
         python_udf_sqrt_and_mol,
+        python_udf_spark35arrow_sqrt_and_mol,
         python_arrow_udf_sqrt_and_mol,
     )
     from python.spark_udfs.sqrt_and_mol.rust import (
@@ -45,6 +46,9 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
 
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, native_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_udf_sqrt_and_mol)
+    _time_and_log_sqrt_and_mol_fn_exec_and_sum(
+        df_simple, python_udf_spark35arrow_sqrt_and_mol
+    )
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, python_arrow_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, pandas_udf_sqrt_and_mol)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, rust_sqrt_and_mol_udf)
@@ -64,7 +68,10 @@ def average_ctr_benchmark(spark: SparkSession):
     print("-" * 80)
 
     from python.spark_udfs.average_ctr.rust import rust_udf_average_crt_udf
-    from python.spark_udfs.average_ctr.pyfns import python_udf_average_crt
+    from python.spark_udfs.average_ctr.pyfns import (
+        python_udf_average_crt,
+        python_udf_spark35arrow_average_crt,
+    )
     from python.spark_udfs.average_ctr.native import native_average_crt
 
     pdf_clicks_views = pd.DataFrame(
@@ -104,6 +111,9 @@ def average_ctr_benchmark(spark: SparkSession):
 
     _time_and_log_average_crt_fn_exec_and_sum(df_clicks_views, native_average_crt)
     _time_and_log_average_crt_fn_exec_and_sum(df_clicks_views, python_udf_average_crt)
+    _time_and_log_average_crt_fn_exec_and_sum(
+        df_clicks_views, python_udf_spark35arrow_average_crt
+    )
     _time_and_log_average_crt_fn_exec_and_sum(df_clicks_views, rust_udf_average_crt_udf)
 
     df_clicks_views.unpersist()
