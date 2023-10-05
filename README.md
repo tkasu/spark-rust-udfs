@@ -76,3 +76,46 @@ python_udf_average_crt exec time: 2.5796, result: 0.1216
 python_udf_spark35arrow_average_crt exec time: 2.9333, result: 0.1216
 rust_udf_average_crt_udf exec time: 1.7411, result: 0.1216
 ```
+
+### Customize benchmark
+
+There are cli options available to customize the benchmark:
+
+```shell
+$ poetry run python -m python.spark_udfs.benchmark --help
+Usage: python -m python.spark_udfs.benchmark [OPTIONS]
+
+Options:
+  --n-rows-sqrt-and-mol INTEGER  Number of rows to generate for sqrt_and_mol
+                                 benchmark
+  --n-rows-average-ctr INTEGER   Number of rows to generate for average_ctr
+                                 benchmark
+  --spark-conf-param TEXT        Spark configuration parameters, key and value
+                                 separated by '='
+  --help                         Show this message and exit.
+```
+
+For example, to run bigger benchmark with Apple 2021 M1 Pro Max with 32 gigs of memory:
+
+```
+$ poetry run python -m python.spark_udfs.benchmark \
+  --n-rows-sqrt-and-mol 500_000_000 \
+  --spark-conf-param spark.driver.memory=24g
+
+--------------------------------------------------------------------------------
+Benchmarking sqrt_and_mol -> sqrt(x) + 42
+Running benchmark with n_rows: 500000000
+--------------------------------------------------------------------------------
+native_sqrt_and_mol exec time: 0.7597, result: 7474559913819.04
+python_udf_sqrt_and_mol exec time: 73.5426, result: 7474559913818.86
+python_udf_spark35arrow_sqrt_and_mol exec time: 34.4456, result: 7474559913818.86
+python_arrow_udf_sqrt_and_mol exec time: 28.4956, result: 7474559913818.86
+pandas_udf_sqrt_and_mol exec time: 17.8690, result: 7474559913818.86
+rust_sqrt_and_mol_udf exec time: 74.4406, result: 7474559913818.86
+rust_sqrt_and_mol_arrow_udf exec time: 25.2552, result: 7474559913818.86
+polars_udf_sqrt_and_mol exec time: 16.1281, result: 7474559913818.86
+polars_udf_sqrt_and_mol_arrow_optimized exec time: 17.5623, result: 7474559913819.04
+map_in_pandas_fn, exec time: 12.1662, result: 7474559913819.04
+map_in_arrow_polars, exec time: 8.5503, result: 7474559913819.04
+scala_udf_sqrt_and_mol exec time: 1.0994, result: 7474559913819.04
+```

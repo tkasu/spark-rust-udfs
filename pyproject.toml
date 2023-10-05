@@ -12,6 +12,7 @@ pyspark = "^3.5.0"
 pandas = "^2.0.2"
 pyarrow = "^13.0.0"
 polars = "^0.19.6"
+click = "^8.1.7"
 
 [tool.poetry.group.dev.dependencies]
 maturin = "^1.1.0"

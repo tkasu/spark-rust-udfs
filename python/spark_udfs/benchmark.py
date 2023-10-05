@@ -1,22 +1,59 @@
 import os
+from dataclasses import dataclass
 from timeit import default_timer as timer
+from typing import List
 
+import click
 import numpy as np
 import pandas as pd
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
 
 
-def benchmark():
-    spark = _get_spark_session()
+@dataclass
+class SparkConfParam:
+    key: str
+    value: str
+
+    @classmethod
+    def from_cli_param(cls, param: str) -> "SparkConfParam":
+        key, value = param.split("=")
+        return cls(key=key, value=value)
+
+
+@click.command()
+@click.option(
+    "--n-rows-sqrt-and-mol",
+    default=50_000_000,
+    help="Number of rows to generate for sqrt_and_mol benchmark",
+)
+@click.option(
+    "--n-rows-average-ctr",
+    default=2_500_000,
+    help="Number of rows to generate for average_ctr benchmark",
+)
+@click.option(
+    "--spark-conf-param",
+    multiple=True,
+    default=[],
+    help="Spark configuration parameters, key and value separated by '='",
+)
+def benchmark(
+    n_rows_sqrt_and_mol: int, n_rows_average_ctr: int, spark_conf_param: List[str]
+):
+    parsed_spark_conf_params = [
+        SparkConfParam.from_cli_param(param) for param in spark_conf_param
+    ]
+
+    spark = _get_spark_session(parsed_spark_conf_params)
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
     spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
 
-    sqrt_and_mol_benchmark(spark)
-    average_ctr_benchmark(spark)
+    sqrt_and_mol_benchmark(spark, n_rows_sqrt_and_mol)
+    average_ctr_benchmark(spark, n_rows_average_ctr)
 
 
-def sqrt_and_mol_benchmark(spark: SparkSession):
+def sqrt_and_mol_benchmark(spark: SparkSession, n_rows: int):
     from python.spark_udfs.sqrt_and_mol.pyfns import (
         python_udf_sqrt_and_mol,
         python_udf_spark35arrow_sqrt_and_mol,
@@ -38,11 +75,10 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
 
     print("-" * 80)
     print("Benchmarking sqrt_and_mol -> sqrt(x) + 42")
+    print(f"Running benchmark with n_rows: {n_rows}")
     print("-" * 80)
     df_simple = (
-        spark.range(50_000_000)
-        .select(F.col("id").alias("value"))
-        .repartition(cpu_count)
+        spark.range(n_rows).select(F.col("id").alias("value")).repartition(cpu_count)
     )
     df_simple.persist()
     # trigger persist
@@ -69,9 +105,10 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
     df_simple.unpersist()
 
 
-def average_ctr_benchmark(spark: SparkSession):
+def average_ctr_benchmark(spark: SparkSession, n_rows: int):
     print("-" * 80)
     print("Benchmarking average_crt -> avg(clicks_arr / views_arr)")
+    print(f"Running benchmark with n_rows: {n_rows}")
     print("-" * 80)
 
     from python.spark_udfs.average_ctr.rust import rust_udf_average_crt_udf
@@ -87,11 +124,11 @@ def average_ctr_benchmark(spark: SparkSession):
         {
             "clicks": (
                 np.random.randint(low=0, high=10, size=5).tolist()
-                for _ in range(2_500_000)
+                for _ in range(n_rows)
             ),
             "views": (
                 np.random.randint(low=9, high=100, size=5).tolist()
-                for _ in range(2_500_000)
+                for _ in range(n_rows)
             ),
         }
     )
@@ -202,15 +239,14 @@ def _time_and_log_average_crt_fn_exec_and_sum(df, fn):
     print(f"{fn.__name__} exec time: {end - start:.4f}, result: {res:.4f}")
 
 
-def _get_spark_session():
-    return (
-        SparkSession.builder.config(
-            "spark.jars",
-            "scala/scala-udfs/target/scala-2.13/scala-udfs_2.13-0.1.0-SNAPSHOT.jar",
-        )
-        .appName("pytest-pyspark-local-testing")
-        .getOrCreate()
-    )
+def _get_spark_session(spark_conf_params: List[SparkConfParam]):
+    builder = SparkSession.builder.config(
+        "spark.jars",
+        "scala/scala-udfs/target/scala-2.13/scala-udfs_2.13-0.1.0-SNAPSHOT.jar",
+    ).master("local[*]")
+    for param in spark_conf_params:
+        builder.config(param.key, param.value)
+    return builder.appName("pytest-pyspark-local-testing").getOrCreate()
 
 
 if __name__ == "__main__":
