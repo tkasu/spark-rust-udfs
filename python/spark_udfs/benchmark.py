@@ -57,6 +57,9 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(
         df_simple, polars_udf_sqrt_and_mol_arrow_optimized
     )
+    _time_and_log_sqrt_and_mol_map_in_arrow_polars_exec_and_sum(
+        df_simple
+    )
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, scala_udf_sqrt_and_mol_fn)
 
     df_simple.unpersist()
@@ -124,6 +127,39 @@ def _time_and_log_sqrt_and_mol_fn_exec_and_sum(df, fn):
     res = df.withColumn("res", fn("value")).select(F.sum("res")).collect()[0][0]
     end = timer()
     print(f"{fn.__name__} exec time: {end - start:.4f}, result: {res:.2f}")
+
+
+def _time_and_log_sqrt_and_mol_map_in_arrow_polars_exec_and_sum(df):
+    from typing import Iterator
+    import pyarrow as pa
+    import polars as pl
+
+    # TODO: Move this function to polars_fns.py
+    #   Currently if doing so, it complains about `RuntimeError: SparkContext or SparkSession should be created first.`
+    def map_in_arrow_polars(
+        iterator: Iterator[pa.RecordBatch],
+    ) -> Iterator[pa.RecordBatch]:
+        for batch in iterator:
+            df_pl = pl.from_arrow(batch, rechunk=False).with_columns(
+                [(pl.col("value").sqrt() + 42.0).alias("res")]
+            )
+
+            arrow_batches = df_pl.to_arrow().to_batches()
+            if len(arrow_batches) != 1:
+                raise RuntimeError("Expected only one batch")
+            arrow_batch = arrow_batches[0]
+            yield arrow_batch
+
+    start = timer()
+    res = (
+        df.mapInArrow(map_in_arrow_polars, "value long, res double")
+        .select(F.sum("res"))
+        .collect()[0][0]
+    )
+    end = timer()
+    print(
+        f"{map_in_arrow_polars.__name__}, exec time: {end - start:.4f}, result: {res:.2f}"
+    )
 
 
 def _time_and_log_average_crt_fn_exec_and_sum(df, fn):
