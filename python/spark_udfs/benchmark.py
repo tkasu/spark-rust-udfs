@@ -1,3 +1,4 @@
+import os
 from timeit import default_timer as timer
 
 import numpy as np
@@ -33,11 +34,13 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
     from python.spark_udfs.sqrt_and_mol.scala import get_scala_udf_sqrt_and_mol_fn
     from python.spark_udfs.sqrt_and_mol.native import native_sqrt_and_mol
 
+    cpu_count = os.cpu_count()
+
     print("-" * 80)
     print("Benchmarking sqrt_and_mol -> sqrt(x) + 42")
     print("-" * 80)
     df_simple = (
-        spark.range(50_000_000).select(F.col("id").alias("value")).repartition(8)
+        spark.range(50_000_000).select(F.col("id").alias("value")).repartition(cpu_count)
     )
     df_simple.persist()
     # trigger persist
@@ -77,6 +80,8 @@ def average_ctr_benchmark(spark: SparkSession):
     )
     from python.spark_udfs.average_ctr.native import native_average_crt
 
+    cpu_count = os.cpu_count()
+
     pdf_clicks_views = pd.DataFrame(
         {
             "clicks": (
@@ -89,7 +94,7 @@ def average_ctr_benchmark(spark: SparkSession):
             ),
         }
     )
-    df_clicks_views = spark.createDataFrame(pdf_clicks_views).repartition(32)
+    df_clicks_views = spark.createDataFrame(pdf_clicks_views).repartition(cpu_count * 4)
 
     df_clicks_views.persist()
     # trigger persist
