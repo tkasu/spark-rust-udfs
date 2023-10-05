@@ -55,17 +55,18 @@ Example output with Apple Macbook Air M1, 8GB:
 --------------------------------------------------------------------------------
 Benchmarking sqrt_and_mol -> sqrt(x) + 42
 --------------------------------------------------------------------------------
-native_sqrt_and_mol exec time: 0.3543, result: 237802256859.78                  
-python_udf_sqrt_and_mol exec time: 15.7128, result: 237802256859.68             
-python_udf_spark35arrow_sqrt_and_mol exec time: 6.1456, result: 237802256859.68 
-python_arrow_udf_sqrt_and_mol exec time: 4.2768, result: 237802256859.68        
-pandas_udf_sqrt_and_mol exec time: 2.5103, result: 237802256859.68              
-rust_sqrt_and_mol_udf exec time: 15.7215, result: 237802256859.68               
-rust_sqrt_and_mol_arrow_udf exec time: 3.7996, result: 237802256859.68          
-polars_udf_sqrt_and_mol exec time: 2.4725, result: 237802256859.68              
-polars_udf_sqrt_and_mol_arrow_optimized exec time: 2.6491, result: 237802256859.78
-map_in_arrow_polars, exec time: 1.9444, result: 237802256859.78                 
-scala_udf_sqrt_and_mol exec time: 0.4729, result: 237802256859.78
+native_sqrt_and_mol exec time: 0.3128, result: 237802256859.78                  
+python_udf_sqrt_and_mol exec time: 13.2817, result: 237802256859.68             
+python_udf_spark35arrow_sqrt_and_mol exec time: 5.4038, result: 237802256859.68 
+python_arrow_udf_sqrt_and_mol exec time: 3.9617, result: 237802256859.68        
+pandas_udf_sqrt_and_mol exec time: 2.3529, result: 237802256859.68              
+rust_sqrt_and_mol_udf exec time: 13.8572, result: 237802256859.68               
+rust_sqrt_and_mol_arrow_udf exec time: 3.5208, result: 237802256859.68          
+polars_udf_sqrt_and_mol exec time: 2.2908, result: 237802256859.68              
+polars_udf_sqrt_and_mol_arrow_optimized exec time: 2.5854, result: 237802256859.78
+map_in_pandas_fn, exec time: 2.6520, result: 237802256859.78                    
+map_in_arrow_polars, exec time: 1.5978, result: 237802256859.78                 
+scala_udf_sqrt_and_mol exec time: 0.5459, result: 237802256859.78
 --------------------------------------------------------------------------------
 Benchmarking average_crt -> avg(clicks_arr / views_arr)
 --------------------------------------------------------------------------------

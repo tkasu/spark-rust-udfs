@@ -40,7 +40,9 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
     print("Benchmarking sqrt_and_mol -> sqrt(x) + 42")
     print("-" * 80)
     df_simple = (
-        spark.range(50_000_000).select(F.col("id").alias("value")).repartition(cpu_count)
+        spark.range(50_000_000)
+        .select(F.col("id").alias("value"))
+        .repartition(cpu_count)
     )
     df_simple.persist()
     # trigger persist
@@ -60,9 +62,8 @@ def sqrt_and_mol_benchmark(spark: SparkSession):
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(
         df_simple, polars_udf_sqrt_and_mol_arrow_optimized
     )
-    _time_and_log_sqrt_and_mol_map_in_arrow_polars_exec_and_sum(
-        df_simple
-    )
+    _time_and_log_sqrt_and_mol_map_in_pandas_exec_and_sum(df_simple)
+    _time_and_log_sqrt_and_mol_map_in_arrow_polars_exec_and_sum(df_simple)
     _time_and_log_sqrt_and_mol_fn_exec_and_sum(df_simple, scala_udf_sqrt_and_mol_fn)
 
     df_simple.unpersist()
@@ -132,6 +133,31 @@ def _time_and_log_sqrt_and_mol_fn_exec_and_sum(df, fn):
     res = df.withColumn("res", fn("value")).select(F.sum("res")).collect()[0][0]
     end = timer()
     print(f"{fn.__name__} exec time: {end - start:.4f}, result: {res:.2f}")
+
+
+def _time_and_log_sqrt_and_mol_map_in_pandas_exec_and_sum(df):
+    from typing import Iterator
+    import pandas as pd
+
+    # TODO: Move this function to pandas_fns.py
+    #   Currently if doing so, it complains about `RuntimeError: SparkContext or SparkSession should be created first.`
+    def map_in_pandas_fn(
+        iterator: Iterator[pd.DataFrame],
+    ) -> Iterator[pd.DataFrame]:
+        for pdf in iterator:
+            pdf["res"] = pdf["value"].pow(1 / 2) + 42
+            yield pdf
+
+    start = timer()
+    res = (
+        df.mapInPandas(map_in_pandas_fn, "value long, res double")
+        .select(F.sum("res"))
+        .collect()[0][0]
+    )
+    end = timer()
+    print(
+        f"{map_in_pandas_fn.__name__}, exec time: {end - start:.4f}, result: {res:.2f}"
+    )
 
 
 def _time_and_log_sqrt_and_mol_map_in_arrow_polars_exec_and_sum(df):
